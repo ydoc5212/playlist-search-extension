@@ -5,6 +5,17 @@
   "description": "Adds playlist search/filter tools in YouTube Save dialogs and /feed/playlists.",
   "minimum_chrome_version": "114",
   "homepage_url": "https://ydoc5212.github.io/playlist-search-extension/",
+  "permissions": [
+    "identity",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [

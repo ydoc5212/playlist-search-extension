@@ -6,6 +6,8 @@ Chrome extension that adds a search/filter bar to YouTube playlist modals and vi
 
 - **Inline search bar inside YouTube's Save to playlist modal**
 - **Inline filter on** `https://www.youtube.com/feed/playlists`
+- Optional API mode to load/search your full playlist library in Save modal
+- API-backed add-to-playlist action for playlists outside YouTube's modal subset
 - Real-time filtering with visible match count
 - Match highlighting in playlist names
 - Fuzzy matching for near-miss queries/typos
@@ -13,7 +15,7 @@ Chrome extension that adds a search/filter bar to YouTube playlist modals and vi
 - Keyboard support: `Escape` clears search
 - Paste works normally in the search field
 - Auto-matches YouTube dark/light theme
-- Zero permissions required
+- Built-in OAuth client for one-click API connect
 
 ## Install
 
@@ -25,6 +27,19 @@ Chrome extension that adds a search/filter bar to YouTube playlist modals and vi
 ## How it works
 
 A content script watches YouTube's dynamic DOM, detects playlist option rows in Save dialogs/sheets and playlist cards on `/feed/playlists`, builds a BM25 index with MiniSearch, injects a native-looking inline filter bar, and filters results as you type.
+
+## API Mode (All Playlists)
+
+To search/add across your full playlist library (not just what YouTube modal currently renders):
+
+1. Open YouTube and click Save on any video.
+2. Click **Connect** and grant access.
+
+The Connect prompt is shown when the modal hits YouTube's 200-playlist cap.
+
+If built-in auth is rejected in your environment, use **Use Custom ID** and configure your own OAuth client.
+
+The extension then paginates `playlists.list` and can add videos with `playlistItems.insert`.
 
 ## Publish Assets
 
