@@ -16,9 +16,11 @@ const YT_SCOPES = [
 
 const TOKEN_EARLY_EXPIRY_MS = 30_000;
 const PLAYLIST_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 15_000;
 
 let memoryPlaylistCache = null;
 let interactiveAuthInFlight = null;
+let refreshInFlight = null;
 
 function storageGet(keys) {
   return chrome.storage.local.get(keys);
@@ -72,6 +74,27 @@ function normalizeError(error, fallback = "Request failed") {
   if (error.message) return error.message;
   return fallback;
 }
+
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal })
+    .catch((error) => {
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Check your network connection and try again.");
+      }
+      throw error;
+    })
+    .finally(() => clearTimeout(timeoutId));
+}
+
+const USER_FRIENDLY_ERRORS = {
+  keyInvalid: "API key is invalid. Please reconnect your account.",
+  quotaExceeded: "YouTube API quota exceeded. Try again tomorrow.",
+  forbidden: "Access denied. Your account may not have permission for this action.",
+  notFound: "Playlist not found. It may have been deleted.",
+  dailyLimitExceeded: "Daily API limit reached. Try again tomorrow.",
+};
 
 async function getConfig() {
   return {
@@ -131,7 +154,7 @@ async function refreshAccessToken(clientId, refreshToken, clientSecret = "") {
     body.set("client_secret", clientSecret);
   }
 
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -186,7 +209,7 @@ async function interactiveAuthWithRedirect(clientId, clientSecret, redirectUriVa
     body.set("client_secret", clientSecret);
   }
 
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenResponse = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -328,11 +351,14 @@ async function ensureAccessToken(options = {}) {
 
   if (stored.refreshToken) {
     try {
-      const refreshed = await refreshAccessToken(
-        oauthClientId,
-        stored.refreshToken,
-        oauthClientSecret,
-      );
+      if (!refreshInFlight) {
+        refreshInFlight = refreshAccessToken(
+          oauthClientId,
+          stored.refreshToken,
+          oauthClientSecret,
+        ).finally(() => { refreshInFlight = null; });
+      }
+      const refreshed = await refreshInFlight;
       await storeTokenBundle(refreshed);
       return refreshed.access_token;
     } catch (error) {
@@ -374,7 +400,7 @@ async function youtubeRequest(url, options = {}) {
       ...(options.headers || {}),
     };
 
-    return fetch(url, {
+    return fetchWithTimeout(url, {
       method,
       headers,
       body: options.body,
@@ -400,7 +426,9 @@ async function youtubeRequest(url, options = {}) {
   const text = await response.text();
   const data = parseJsonSafe(text);
   if (!response.ok) {
-    const message =
+    const rawCode = data?.error?.errors?.[0]?.reason || data?.error?.status || "";
+    const friendly = USER_FRIENDLY_ERRORS[rawCode];
+    const message = friendly ||
       data?.error?.message ||
       data?.error_description ||
       data?.error ||

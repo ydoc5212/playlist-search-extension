@@ -14,7 +14,57 @@
     align-items: center;
     justify-content: center;
     gap: 60px;
+    overflow: hidden;
+    position: relative;
   }
+
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .blob-1 {
+    width: 600px;
+    height: 600px;
+    background: rgba(62,166,255,0.12);
+    filter: blur(100px);
+    top: -200px;
+    right: -80px;
+  }
+  .blob-2 {
+    width: 500px;
+    height: 500px;
+    background: rgba(255,30,30,0.08);
+    filter: blur(90px);
+    bottom: -150px;
+    left: -60px;
+  }
+  .blob-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(140,80,255,0.10);
+    filter: blur(70px);
+    top: 60%;
+    right: 25%;
+  }
+  .blob-4 {
+    width: 250px;
+    height: 250px;
+    background: rgba(62,166,255,0.06);
+    filter: blur(60px);
+    bottom: 10%;
+    right: 5%;
+  }
+  .blob-5 {
+    width: 200px;
+    height: 200px;
+    background: rgba(255,100,50,0.06);
+    filter: blur(50px);
+    top: 15%;
+    left: 30%;
+  }
+
+  .text-side, .dialog { position: relative; z-index: 1; }
 
   .text-side {
     max-width: 380px;
@@ -141,6 +191,11 @@
 </style>
 </head>
 <body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
   <div class="text-side">
     <h1>Works in dark mode too</h1>
     <p>Seamlessly matches YouTube's dark theme. BM25 fuzzy search ranks results as you type.</p>

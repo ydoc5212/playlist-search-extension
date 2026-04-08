@@ -6,7 +6,7 @@
   const STYLE_ID = "ytpf-inline-style";
   const MODAL_EXPANDED_CLASS = "ytpf-modal-expanded";
   const MODAL_INLINE_CLASS = "ytpf-inline-modal";
-  const MODAL_HYDRATE_TIMEOUT_MS = 1000;
+  const MODAL_HYDRATE_TIMEOUT_MS = 2500;
   const MODAL_HYDRATE_IDLE_MS = 70;
   const MODAL_HYDRATE_MAX_PASSES = 24;
   const MODAL_HYDRATE_STABLE_ROUNDS = 2;
@@ -27,7 +27,7 @@
   };
 
   const MODAL_HOST_SELECTOR =
-    "ytd-add-to-playlist-renderer, yt-add-to-playlist-renderer, yt-contextual-sheet-layout, tp-yt-paper-dialog, [role='dialog']";
+    "ytd-add-to-playlist-renderer, yt-add-to-playlist-renderer, yt-contextual-sheet-layout, tp-yt-paper-dialog";
 
   const MODAL_ROW_SELECTOR =
     "ytd-playlist-add-to-option-renderer, yt-playlist-add-to-option-renderer, yt-checkbox-list-entry-renderer, yt-list-item-view-model, yt-collection-item-view-model";
@@ -36,7 +36,7 @@
   const PLAYLISTS_OUTER_ROW_SELECTOR = "ytd-rich-item-renderer, ytd-rich-grid-media";
   const PLAYLIST_RENDERER_SELECTOR =
     "ytd-grid-playlist-renderer, ytd-playlist-renderer, ytd-compact-playlist-renderer, yt-lockup-view-model, yt-collection-item-view-model";
-  const PLAYLISTS_FEED_PATH_RE = /^\/feed\/playlists\/?$/;
+  const PLAYLISTS_FEED_PATH_RE = /^\/feed\/(playlists|library)\/?(\?.*)?$/;
   const PLAYLIST_LINK_SELECTOR =
     "a[href*='/playlist?list='], a[href*='youtube.com/playlist?list=']";
 
@@ -1508,6 +1508,8 @@
 
     applyFilter(ctrl);
     requestAnimationFrame(() => {
+      const liveCtrl = controllers.get(host);
+      if (!liveCtrl || liveCtrl.root !== ui.root) return;
       if (ui.root.isConnected && ui.root.getClientRects().length === 0) {
         host.insertBefore(ui.root, host.firstElementChild || null);
       }

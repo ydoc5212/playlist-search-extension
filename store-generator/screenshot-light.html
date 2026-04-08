@@ -8,12 +8,16 @@
   body {
     width: 1280px;
     height: 800px;
-    background: linear-gradient(160deg, #f8f9fa 0%, #e8eaed 100%);
+    background:
+      radial-gradient(circle, rgba(0,0,0,0.12) 1.2px, transparent 1.2px),
+      linear-gradient(160deg, #f8f9fa 0%, #e8eaed 100%);
+    background-size: 28px 28px, 100% 100%;
     font-family: Roboto, Arial, sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 60px;
+    overflow: hidden;
   }
 
   .text-side {
@@ -37,8 +41,9 @@
     width: 420px;
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
     overflow: hidden;
+    transform: rotate(2.5deg);
   }
 
   .dialog-header {
