@@ -5,6 +5,10 @@ const STORAGE_KEYS = {
   refreshToken: "ytpf_oauth_refresh_token",
   playlistCache: "ytpf_playlist_cache",
   authProfile: "ytpf_auth_profile",
+  oauthClientId: "ytpf_oauth_client_id",
+  oauthClientSecret: "ytpf_oauth_client_secret",
+  useCustomOauth: "ytpf_use_custom_oauth_client",
+  customOauthVersion: "ytpf_custom_oauth_mode_version",
 };
 
 const DEFAULT_OAUTH_CLIENT_ID = "619930870075-9vhlm3etaolakv3824c12qnfivrkt408.apps.googleusercontent.com";
@@ -97,10 +101,16 @@ const USER_FRIENDLY_ERRORS = {
 };
 
 async function getConfig() {
+  const custom = await storageGet([
+    STORAGE_KEYS.oauthClientId,
+    STORAGE_KEYS.oauthClientSecret,
+  ]);
+  const customId = custom[STORAGE_KEYS.oauthClientId];
+  const customSecret = custom[STORAGE_KEYS.oauthClientSecret];
   return {
-    oauthClientId: DEFAULT_OAUTH_CLIENT_ID,
-    oauthClientSecret: DEFAULT_OAUTH_CLIENT_SECRET,
-    usingDefaultClientId: true,
+    oauthClientId: customId || DEFAULT_OAUTH_CLIENT_ID,
+    oauthClientSecret: customSecret || DEFAULT_OAUTH_CLIENT_SECRET,
+    usingDefaultClientId: !customId,
   };
 }
 
@@ -136,10 +146,10 @@ async function clearAuth() {
     STORAGE_KEYS.refreshToken,
     STORAGE_KEYS.playlistCache,
     STORAGE_KEYS.authProfile,
-    "ytpf_oauth_client_id",
-    "ytpf_oauth_client_secret",
-    "ytpf_use_custom_oauth_client",
-    "ytpf_custom_oauth_mode_version",
+    STORAGE_KEYS.oauthClientId,
+    STORAGE_KEYS.oauthClientSecret,
+    STORAGE_KEYS.useCustomOauth,
+    STORAGE_KEYS.customOauthVersion,
   ]);
   memoryPlaylistCache = null;
 }

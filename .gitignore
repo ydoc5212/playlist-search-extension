@@ -5,3 +5,4 @@ store-generated/
 store-generator/node_modules/
 .DS_Store
 launch/
+*.zip
