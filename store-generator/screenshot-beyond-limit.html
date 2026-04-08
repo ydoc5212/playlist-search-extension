@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px;
+    height: 800px;
+    background: linear-gradient(160deg, #f8f9fa 0%, #e8eaed 100%);
+    font-family: Roboto, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+  }
+
+  .text-side {
+    max-width: 400px;
+  }
+  .text-side h1 {
+    font-size: 36px;
+    font-weight: 500;
+    color: #0f0f0f;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .text-side p {
+    font-size: 18px;
+    color: #606060;
+    line-height: 1.5;
+  }
+  .badge {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 8px 16px;
+    background: #CC0000;
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Comparison */
+  .compare {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .compare-card {
+    width: 380px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 20px 24px;
+  }
+  .compare-card.enhanced {
+    border: 2px solid #065fd4;
+  }
+  .compare-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #909090;
+    margin-bottom: 8px;
+  }
+  .compare-card.enhanced .compare-label {
+    color: #065fd4;
+  }
+  .compare-count {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f0f0f;
+    margin-bottom: 4px;
+  }
+  .compare-desc {
+    font-size: 14px;
+    color: #606060;
+  }
+  .compare-bar {
+    margin-top: 12px;
+    height: 8px;
+    background: #e8eaed;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .compare-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .compare-fill.limited {
+    width: 24%;
+    background: #909090;
+  }
+  .compare-fill.full {
+    width: 100%;
+    background: linear-gradient(90deg, #065fd4, #3ea6ff);
+  }
+</style>
+</head>
+<body>
+  <div class="text-side">
+    <h1>Break the 200 playlist limit</h1>
+    <p>YouTube only shows your first 200 playlists. This extension loads all of them via the YouTube API.</p>
+    <div class="badge">Requires one-time Google sign-in</div>
+  </div>
+  <div class="compare">
+    <div class="compare-card">
+      <div class="compare-label">Without extension</div>
+      <div class="compare-count">200</div>
+      <div class="compare-desc">YouTube's built-in cap</div>
+      <div class="compare-bar"><div class="compare-fill limited"></div></div>
+    </div>
+    <div class="compare-card enhanced">
+      <div class="compare-label">With Playlist Filter</div>
+      <div class="compare-count">847</div>
+      <div class="compare-desc">All your playlists, searchable</div>
+      <div class="compare-bar"><div class="compare-fill full"></div></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,3 +1,5 @@
 node_modules/
 dist/
 oauth_config.json
+store-generated/
+store-generator/node_modules/

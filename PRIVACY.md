@@ -1,9 +1,46 @@
 # Privacy Policy
 
-YouTube Playlist Filter does not collect, store, transmit, or sell personal data.
+**Last updated:** April 7, 2026
 
-The extension runs only on youtube.com pages to read visible playlist names and filter them locally in the browser. No analytics, tracking, or remote API calls are performed by the extension.
+## Overview
 
-Contact: chergenroeder135@gmail.com
+YouTube Playlist Filter is a Chrome extension that adds an in-page search bar to YouTube's playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and save videos to them.
 
-For a web-hosted version suitable for Chrome Web Store, publish `docs/privacy-policy.html` and use that URL in the listing.
+## Data Collection
+
+This extension does **not** collect, store, transmit, or sell personal data to the extension developer or any third party. No analytics, tracking, or remote logging is performed.
+
+## YouTube Data API Usage
+
+The extension communicates with the following Google services and no other external servers:
+
+- `googleapis.com` — YouTube Data API (`playlists.list`, `channels.list`, `playlistItems.insert`)
+- `oauth2.googleapis.com` — OAuth 2.0 authentication and token refresh
+
+These requests are made directly from your browser to Google. The extension developer does **not** operate any intermediate servers and never receives your data.
+
+## Authentication and Local Storage
+
+When you sign in via Google OAuth 2.0 (`youtube.force-ssl` scope), the following data is stored locally in `chrome.storage.local` on your device:
+
+- OAuth access token and refresh token
+- Channel profile info (channel ID, title, custom URL)
+- Cached playlist data (refreshed every 6 hours)
+
+This data is used solely to authenticate and make YouTube Data API requests. It is never transmitted to the extension developer or any server other than Google's OAuth and API endpoints.
+
+## Permissions and Processing
+
+The extension runs as a content script on `youtube.com` pages and uses a background service worker to manage API calls and token storage. Playlist names are also read from the YouTube page DOM. All filtering is performed locally in your browser.
+
+## Third-Party Code
+
+The extension bundles a local copy of MiniSearch for BM25-based ranking. No remote executable code is loaded at runtime.
+
+## Changes
+
+If this policy changes, the updated version will be posted on this page with a new "Last updated" date.
+
+## Contact
+
+Email: chergenroeder135@gmail.com

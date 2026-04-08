@@ -7,7 +7,7 @@ const STORAGE_KEYS = {
   authProfile: "ytpf_auth_profile",
 };
 
-const DEFAULT_OAUTH_CLIENT_ID = "";
+const DEFAULT_OAUTH_CLIENT_ID = "619930870075-9vhlm3etaolakv3824c12qnfivrkt408.apps.googleusercontent.com";
 const DEFAULT_OAUTH_CLIENT_SECRET = "";
 
 const YT_SCOPES = [

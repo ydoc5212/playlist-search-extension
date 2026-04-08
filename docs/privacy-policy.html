@@ -17,8 +17,8 @@
   <h2>Overview</h2>
   <p>
     YouTube Playlist Filter is a Chrome extension that adds an in-page search bar to YouTube's
-    playlist selection interfaces. It also uses the YouTube Data API to fetch your playlist names
-    and save videos to your playlists.
+    playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and
+    save videos to them.
   </p>
 
   <h2>Data Collection</h2>
@@ -32,10 +32,10 @@
     The extension communicates with the following Google services and no other external servers:
   </p>
   <ul>
-    <li><code>googleapis.com</code> &mdash; to call the YouTube Data API
-      (<code>playlists.list</code> for fetching playlist names,
-      <code>playlistItems.insert</code> for saving videos to playlists)</li>
-    <li><code>oauth2.googleapis.com</code> &mdash; to handle OAuth 2.0 authentication and
+    <li><code>googleapis.com</code> &mdash; YouTube Data API
+      (<code>playlists.list</code>, <code>channels.list</code>,
+      <code>playlistItems.insert</code>)</li>
+    <li><code>oauth2.googleapis.com</code> &mdash; OAuth 2.0 authentication and
       token refresh</li>
   </ul>
   <p>
@@ -45,17 +45,25 @@
 
   <h2>Authentication and Local Storage</h2>
   <p>
-    When you sign in, OAuth tokens (access token and refresh token) are stored locally in
-    <code>chrome.storage</code> on your device. These tokens are used solely to authenticate
-    YouTube Data API requests and are never transmitted to the extension developer or any
-    server other than Google's OAuth and API endpoints listed above.
+    When you sign in via Google OAuth 2.0 (<code>youtube.force-ssl</code> scope), the following
+    data is stored locally in <code>chrome.storage.local</code> on your device:
+  </p>
+  <ul>
+    <li>OAuth access token and refresh token</li>
+    <li>Channel profile info (channel ID, title, custom URL)</li>
+    <li>Cached playlist data (refreshed every 6 hours)</li>
+  </ul>
+  <p>
+    This data is used solely to authenticate and make YouTube Data API requests. It is never
+    transmitted to the extension developer or any server other than Google's OAuth and API
+    endpoints.
   </p>
 
   <h2>Permissions and Processing</h2>
   <p>
     The extension runs as a content script on <code>youtube.com</code> pages and uses a background
-    service worker to manage API calls and token storage. Playlist filtering is performed locally
-    in your browser.
+    service worker to manage API calls and token storage. Playlist names are also read from the
+    YouTube page DOM. All filtering is performed locally in your browser.
   </p>
 
   <h2>Third-Party Code</h2>
