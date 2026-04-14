@@ -13,7 +13,7 @@ Thanks for your interest in YouTube Playlist Search! Here's how to get started.
 2. Load the extension in Chrome:
    - Go to `chrome://extensions`
    - Enable **Developer mode** (top right)
-   - Click **Load unpacked** and select the repo folder
+   - Click **Load unpacked** and select the `src/` folder
 
 3. Set up OAuth credentials (required for "Load all playlists" to work):
    - See [OAuth Setup](#oauth-setup) below
@@ -38,21 +38,20 @@ The extension uses the YouTube Data API to fetch playlists beyond YouTube's 200 
 ## Project Structure
 
 ```
-background.js    — Service worker: OAuth flow, YouTube API calls, playlist caching
-content.js       — Content script: injects search UI into YouTube's Save modal and playlist feed
-styles.css       — Injected styles (supports dark/light theme)
-vendor/          — Vendored dependencies (MiniSearch for BM25 ranking)
-icons/           — Extension icons
-docs/            — Privacy policy and support page (hosted via GitHub Pages)
-scripts/         — Build scripts (e.g. store ZIP packaging)
-store/           — Chrome Web Store submission docs
+src/             — Extension source (load this folder as unpacked)
+  background.js  — Service worker: OAuth flow, YouTube API calls, playlist caching
+  content.js     — Content script: injects search UI into YouTube's Save modal and playlist feed
+  styles.css     — Injected styles (supports dark/light theme)
+  vendor/        — Vendored dependencies (MiniSearch for BM25 ranking)
+  icons/         — Extension icons
+docs/            — Landing page, privacy policy, support (GitHub Pages)
 ```
 
 ## Making Changes
 
 1. Create a branch off `main`
 2. Make your changes
-3. Test manually using the [QA checklist](QA_CHECKLIST.md)
+3. Test manually (see CONTRIBUTING guidelines)
 4. Open a PR with a clear description of what changed and why
 
 ## Code Style

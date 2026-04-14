@@ -21,7 +21,7 @@ Available on the [Chrome Web Store](https://chromewebstore.google.com/) (search 
 1. Clone this repo
 2. Open `chrome://extensions`
 3. Enable **Developer mode** (top right)
-4. Click **Load unpacked** and select the repo folder
+4. Click **Load unpacked** and select the `src/` folder
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup including OAuth credentials.
 
@@ -37,7 +37,7 @@ A content script detects YouTube's Save dialog, injects a search bar, and filter
 
 ## Privacy
 
-The extension only accesses your YouTube playlist names to power search. No data is stored on external servers — everything stays in your browser. See `docs/privacy-policy.html` for details.
+The extension only accesses your YouTube playlist names to power search. No data is stored on external servers — everything stays in your browser. See the [privacy policy](https://ydoc5212.github.io/playlist-search-extension/privacy-policy.html) for details.
 
 ## Contributing
 

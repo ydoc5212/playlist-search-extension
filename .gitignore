@@ -5,13 +5,5 @@ oauth_config.json
 .DS_Store
 *.zip
 
-# Internal / maintainer-only
-store/
-store-assets/
-store-generator/
-store-generated/
-scripts/
-docs/superpowers/
-launch/
-launch-strategy/
-QA_CHECKLIST.md
+# Maintainer-only (store assets, build scripts, launch docs, QA)
+private/
