@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>YouTube Playlist Filter Privacy Policy</title>
+  <title>YouTube Playlist Search Privacy Policy</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px auto; max-width: 760px; line-height: 1.6; padding: 0 16px; }
     h1, h2 { line-height: 1.3; }
@@ -11,12 +11,12 @@
   </style>
 </head>
 <body>
-  <h1>YouTube Playlist Filter Privacy Policy</h1>
-  <p><strong>Last updated:</strong> April 7, 2026</p>
+  <h1>YouTube Playlist Search Privacy Policy</h1>
+  <p><strong>Last updated:</strong> April 13, 2026</p>
 
   <h2>Overview</h2>
   <p>
-    YouTube Playlist Filter is a Chrome extension that adds an in-page search bar to YouTube's
+    YouTube Playlist Search is a Chrome extension that adds an in-page search bar to YouTube's
     playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and
     save videos to them.
   </p>
@@ -37,6 +37,7 @@
       <code>playlistItems.insert</code>)</li>
     <li><code>oauth2.googleapis.com</code> &mdash; OAuth 2.0 authentication and
       token refresh</li>
+    <li><code>accounts.google.com</code> &mdash; Google sign-in consent screen</li>
   </ul>
   <p>
     These requests are made directly from your browser to Google. The extension developer does
@@ -52,6 +53,7 @@
     <li>OAuth access token and refresh token</li>
     <li>Channel profile info (channel ID, title, custom URL)</li>
     <li>Cached playlist data (refreshed every 6 hours)</li>
+    <li>Custom OAuth client configuration, if provided by the user</li>
   </ul>
   <p>
     This data is used solely to authenticate and make YouTube Data API requests. It is never
@@ -80,7 +82,7 @@
 
   <h2>Contact</h2>
   <p>
-    Email: <a href="mailto:chergenroeder135@gmail.com">chergenroeder135@gmail.com</a>
+    Email: <a href="mailto:playlist@codyh.xyz">playlist@codyh.xyz</a>
   </p>
 </body>
 </html>

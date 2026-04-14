@@ -1,10 +1,10 @@
 # Privacy Policy
 
-**Last updated:** April 7, 2026
+**Last updated:** April 13, 2026
 
 ## Overview
 
-YouTube Playlist Filter is a Chrome extension that adds an in-page search bar to YouTube's playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and save videos to them.
+YouTube Playlist Search is a Chrome extension that adds an in-page search bar to YouTube's playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and save videos to them.
 
 ## Data Collection
 
@@ -16,6 +16,7 @@ The extension communicates with the following Google services and no other exter
 
 - `googleapis.com` — YouTube Data API (`playlists.list`, `channels.list`, `playlistItems.insert`)
 - `oauth2.googleapis.com` — OAuth 2.0 authentication and token refresh
+- `accounts.google.com` — Google sign-in consent screen
 
 These requests are made directly from your browser to Google. The extension developer does **not** operate any intermediate servers and never receives your data.
 
@@ -26,6 +27,7 @@ When you sign in via Google OAuth 2.0 (`youtube.force-ssl` scope), the following
 - OAuth access token and refresh token
 - Channel profile info (channel ID, title, custom URL)
 - Cached playlist data (refreshed every 6 hours)
+- Custom OAuth client configuration, if provided by the user
 
 This data is used solely to authenticate and make YouTube Data API requests. It is never transmitted to the extension developer or any server other than Google's OAuth and API endpoints.
 
@@ -43,4 +45,4 @@ If this policy changes, the updated version will be posted on this page with a n
 
 ## Contact
 
-Email: chergenroeder135@gmail.com
+Email: playlist@codyh.xyz
