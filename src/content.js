@@ -899,7 +899,7 @@
     const input = document.createElement("input");
     input.className = "ytpf-input";
     input.type = "text";
-    const label = surface === "page" ? "Filter this page" : "Search playlists";
+    const label = surface === "page" ? "Filter playlists" : "Search playlists";
     input.placeholder = label;
     input.setAttribute("aria-label", label);
     input.autocomplete = "off";
@@ -1304,16 +1304,51 @@
     } else if (needsPrompt) {
       const msg = document.createElement("span");
       msg.className = "ytpf-connect-msg";
-      msg.textContent = "YouTube limits this list to the most recent 200 playlists. Connect to load your full library.";
+      msg.textContent = "YouTube limits this list to the most recent 200 playlists.";
       bar.appendChild(msg);
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "ytpf-chip-btn";
       btn.textContent = "Load all playlists";
-      btn.setAttribute("aria-label", "Load all playlists from your account");
+      btn.title = "Connects to YouTube to fetch your full playlist library";
+      btn.setAttribute("aria-label", "Connects to YouTube to fetch your full playlist library");
       btn.addEventListener("click", () => connectApi(ctrl));
       bar.appendChild(btn);
     }
+  }
+
+  function findModalScrollContainer(ctrl) {
+    const seen = new Set();
+    const candidates = [];
+
+    function add(node) {
+      if (node instanceof Element && ctrl.host.contains(node) && !seen.has(node)) {
+        seen.add(node);
+        candidates.push(node);
+      }
+    }
+
+    add(ctrl.rows[0]?.parentElement);
+    add(ctrl.rows[0]);
+    for (const el of ctrl.host.querySelectorAll("#playlists, #contents, [role='listbox'], yt-checkbox-list-renderer")) {
+      add(el);
+    }
+    add(ctrl.host);
+
+    for (const candidate of candidates) {
+      let node = candidate;
+      while (node && node instanceof Element) {
+        const style = window.getComputedStyle(node);
+        const overflowY = style.overflowY || "";
+        if (node.scrollHeight - node.clientHeight > 12 && (overflowY === "auto" || overflowY === "scroll")) {
+          return node;
+        }
+        if (node === ctrl.host) break;
+        node = node.parentElement;
+      }
+    }
+
+    return null;
   }
 
   function teardownHost(host) {
@@ -1359,7 +1394,7 @@
       }
     });
 
-    const scrollContainer = isModal ? findModalScrollContainer(ctrl) : null;
+    const scrollContainer = isModal ? (ctrl.scrollContainer ?? null) : null;
 
     if (query && ctrl.sortResults && ctrl.parent?.isConnected) {
       const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
@@ -1399,9 +1434,8 @@
     if (ctrl.surface === "page") {
       const safeTotal = Math.max(0, ctrl.rows.length);
       const safeVisible = Math.max(0, matches.length);
-      ctrl.meta.textContent = query
-        ? `${safeVisible} of ${safeTotal} playlists on this page`
-        : `${safeTotal} playlists on this page`;
+      ctrl.input.placeholder = `Filter ${safeTotal} playlists`;
+      ctrl.meta.textContent = query ? `${safeVisible} of ${safeTotal}` : "";
     }
 
     if (isModal) {
@@ -1444,7 +1478,12 @@
       apiBusy: false,
       apiSaving: false,
       apiNotice: "",
+      scrollContainer: undefined,
     };
+
+    if (surface === "modal") {
+      ctrl.scrollContainer = findModalScrollContainer(ctrl);
+    }
 
     ui.input.addEventListener("input", () => {
       applyFilter(ctrl);
@@ -1526,7 +1565,6 @@
     existing.sortResults = surface === "modal";
     applyFilter(existing);
     if (surface === "modal") {
-      maybeStartModalHydration(existing);
       if (!apiSessionCache.playlists && !existing.apiBusy) {
         bootstrapModalApi(existing);
       }
