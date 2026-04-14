@@ -277,10 +277,10 @@
   const CONNECT_BAR_STYLES = `
     .ytpf-connect-bar {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 8px;
       padding: 10px 16px;
       border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
     }
@@ -288,6 +288,7 @@
       font-family: Roboto, Arial, sans-serif;
       font-size: 13px;
       color: var(--yt-spec-text-secondary, #606060);
+      text-align: center;
     }
     .ytpf-connect-error {
       color: #c00;
@@ -1304,7 +1305,7 @@
     } else if (needsPrompt) {
       const msg = document.createElement("span");
       msg.className = "ytpf-connect-msg";
-      msg.textContent = "YouTube limits this list to the most recent 200 playlists.";
+      msg.textContent = "It looks like you have 200+ playlists. YouTube only loads 200 by default.";
       bar.appendChild(msg);
       const btn = document.createElement("button");
       btn.type = "button";
