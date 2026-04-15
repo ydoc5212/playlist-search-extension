@@ -592,7 +592,13 @@
   }
 
   function getLabelElement(row) {
-    return row.querySelector(ITEM_TEXT_SELECTOR);
+    const el = row.querySelector(ITEM_TEXT_SELECTOR) ||
+      queryAllDeep(ITEM_TEXT_SELECTOR, row)[0] || null;
+    if (el) {
+      const root = el.getRootNode();
+      if (root instanceof ShadowRoot) ensureScopedStyles(root);
+    }
+    return el;
   }
 
   function escapeHtml(input) {
