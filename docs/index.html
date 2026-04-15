@@ -361,21 +361,13 @@
     width: 100%;
     aspect-ratio: 16/9;
     overflow: hidden;
-    background:
-      radial-gradient(ellipse at 32% 78%, rgba(255,170,50,0.22) 0%, transparent 45%),
-      radial-gradient(circle at 70% 30%, rgba(100,120,200,0.08) 0%, transparent 50%),
-      radial-gradient(circle at 30% 35%, rgba(140,90,200,0.06) 0%, transparent 45%),
-      linear-gradient(135deg, #1a1040 0%, #1e1350 30%, #18103a 60%, #120e28 100%);
+    background: #0f0f0f;
   }
-  .mock-player::after {
-    content: '';
-    position: absolute;
-    bottom: 27%;
-    left: 8%;
-    right: 5%;
-    height: 2px;
-    background: rgba(15,10,20,0.4);
-    z-index: 2;
+  .mock-player img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
   .mock-player-time {
     position: absolute;
@@ -400,66 +392,6 @@
     width: 54%;
     height: 100%;
     background: var(--yt-red);
-  }
-  /* Lofi girl scene */
-  .lofi-window {
-    position: absolute;
-    top: 8%;
-    right: 10%;
-    width: 40%;
-    height: 58%;
-    border-radius: 4px;
-    background: linear-gradient(180deg, #0c1830 0%, #152545 55%, #264070 100%);
-    border: 3px solid rgba(15,10,20,0.8);
-    box-shadow: 0 0 25px rgba(80,120,200,0.06);
-  }
-  .lofi-window::before {
-    content: '';
-    position: absolute;
-    top: 16%;
-    right: 22%;
-    width: 14%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: #ddd5c0;
-    box-shadow: 0 0 8px 3px rgba(220,210,190,0.25);
-  }
-  .lofi-window::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 2px;
-    height: 100%;
-    background: rgba(15,10,20,0.5);
-  }
-  .lofi-figure {
-    position: absolute;
-    bottom: 22%;
-    left: 18%;
-    width: 14%;
-    height: 42%;
-    z-index: 1;
-  }
-  .lofi-figure::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 28%;
-    width: 42%;
-    aspect-ratio: 0.9;
-    border-radius: 48%;
-    background: #110d15;
-  }
-  .lofi-figure::after {
-    content: '';
-    position: absolute;
-    top: 28%;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #110d15;
-    border-radius: 30% 25% 5% 10%;
   }
   .mock-info {
     padding: 14px 16px 16px;
@@ -785,8 +717,7 @@
       <a href="https://chromewebstore.google.com/detail/efgbkmnooapcpdpgmihemfpedchhmmek" target="_blank" rel="noopener" class="dialog-link" title="Try it yourself">
       <div class="mock-yt-page">
         <div class="mock-player">
-          <div class="lofi-window"></div>
-          <div class="lofi-figure"></div>
+          <img src="lofi-thumb.jpg" alt="" draggable="false">
           <div class="mock-player-time">1:42:37 / 3:14:02</div>
           <div class="mock-progress"><div class="mock-progress-fill"></div></div>
         </div>
