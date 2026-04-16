@@ -1,6 +1,6 @@
 # Support
 
-For help with YouTube Playlist Filter:
+For help with YouTube Playlist Search:
 
 - Email: chergenroeder135@gmail.com
 - Include Chrome version, extension version, and a screenshot/video of the issue.
