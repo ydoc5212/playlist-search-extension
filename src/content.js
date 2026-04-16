@@ -1455,15 +1455,26 @@
     }
     add(ctrl.host);
 
+    // Walk up to 5 levels above ctrl.host before giving up. The new view-model
+    // save modal scrolls at yt-sheet-view-model (the host's parent), so a
+    // host-bounded walk would always return null and we'd lose the scroll-to-
+    // top-on-first-keystroke behavior — leaving users staring at the bottom
+    // of the list with their matches reordered out of sight at the top.
+    // 5 levels is enough to cross the sheet wrapper without escaping into
+    // page chrome (where returning <body> would scroll the whole page).
+    const ABOVE_HOST_LIMIT = 5;
     for (const candidate of candidates) {
       let node = candidate;
-      while (node && node instanceof Element) {
+      let stepsAboveHost = 0;
+      let pastHost = false;
+      while (node && node instanceof Element && node !== document.body) {
         const style = window.getComputedStyle(node);
         const overflowY = style.overflowY || "";
         if (node.scrollHeight - node.clientHeight > 12 && (overflowY === "auto" || overflowY === "scroll")) {
           return node;
         }
-        if (node === ctrl.host) break;
+        if (pastHost && ++stepsAboveHost > ABOVE_HOST_LIMIT) break;
+        if (node === ctrl.host) pastHost = true;
         node = node.parentElement;
       }
     }
