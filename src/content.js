@@ -42,17 +42,61 @@
     weights: { fuzzy: 0.1, prefix: 0.75 },
   };
 
-  // Playlist-add renderers ONLY. Do NOT add tp-yt-paper-dialog,
-  // yt-contextual-sheet-layout, or any other generic dialog/sheet component:
-  // YouTube uses those for many non-playlist surfaces (e.g. the video upload
-  // Visibility step), and a broader selector causes the filter bar to inject
-  // into the wrong dialog — its public/unlisted/private options match the
-  // generic row selectors and collectRows happily returns them.
+  // ── Save-modal DOM reference (captured 2026-04-16) ─────────────────────────
+  // YouTube ships two coexisting variants of the "Save to playlist" modal.
+  // Selectors below must keep matching BOTH; the new view-model variant has
+  // been rolling out and is what most users see now.
+  //
+  // OLD (Polymer renderer, pre-rollout):
+  //   ytd-add-to-playlist-renderer
+  //     #playlists / yt-checkbox-list-renderer
+  //       ytd-playlist-add-to-option-renderer  (rows; .data has playlistId)
+  //         tp-yt-paper-checkbox               (toggle)
+  //         #label / yt-formatted-string       (title)
+  //
+  // NEW (view-model, post-rollout):
+  //   yt-sheet-view-model                              ← scrolls
+  //     yt-contextual-sheet-layout                     ← MODAL_HOST (also used
+  //       yt-panel-header-view-model[aria-label=          by other sheets like
+  //         "Save video to..."]                          upload Visibility —
+  //       yt-list-view-model                             distinguish via the
+  //         toggleable-list-item-view-model  ← ROW       :has(toggleable-…)
+  //           yt-list-item-view-model[                   guard, since the old
+  //             role=listitem,                           narrowing-only fix
+  //             aria-pressed=true|false,                 (commit d652799)
+  //             aria-label="<title>, <Private|Public|    blocked the new
+  //               Unlisted>, <Selected|Not selected>"]   modal entirely.
+  //             button.ytListItemViewModelButtonOrAnchor[aria-pressed]
+  //               span.ytListItemViewModelTitle  ← TITLE TEXT (clean, no
+  //                 "Watch later"                  children, normalizable)
+  //               span.ytListItemViewModelSubtitle  ← privacy ("Private")
+  //             yt-collection-thumbnail-view-model  ← playlist marker; the
+  //                                                   visibility dialog has
+  //                                                   no collection thumbs
+  //       yt-panel-footer-view-model
+  //
+  // Notes for future maintenance:
+  // - View-model rows have NO Polymer .data/.__data — getRowPlaylistId returns
+  //   null for them. Existing rows just get hidden/shown; saving still works
+  //   because the user clicks YouTube's own toggle button. Synth rows (filtered
+  //   API matches) carry the playlistId from the InnerTube response, so they
+  //   call innertubeSaveVideo directly without needing DOM-derived IDs.
+  // - The new modal is not virtualized: all 200+ playlists render up-front.
+  // - aria-label on yt-list-item-view-model is locale-dependent ("Private",
+  //   "Selected") — never key off it for matching; use it only as a last-resort
+  //   text fallback.
+  //
+  // Generic dialog containers (tp-yt-paper-dialog, yt-contextual-sheet-layout)
+  // are reused across the site for non-playlist surfaces. The :has(...) guard
+  // ensures we only attach when the dialog actually contains playlist rows.
   const MODAL_HOST_SELECTOR =
-    "ytd-add-to-playlist-renderer, yt-add-to-playlist-renderer";
+    "ytd-add-to-playlist-renderer, " +
+    "yt-add-to-playlist-renderer, " +
+    "yt-contextual-sheet-layout:has(toggleable-list-item-view-model), " +
+    "tp-yt-paper-dialog:has(toggleable-list-item-view-model)";
 
   const MODAL_ROW_SELECTOR =
-    "ytd-playlist-add-to-option-renderer, yt-playlist-add-to-option-renderer, yt-checkbox-list-entry-renderer, yt-list-item-view-model, yt-collection-item-view-model";
+    "toggleable-list-item-view-model, ytd-playlist-add-to-option-renderer, yt-playlist-add-to-option-renderer, yt-checkbox-list-entry-renderer, yt-list-item-view-model, yt-collection-item-view-model";
   const PLAYLISTS_GRID_SELECTOR = "ytd-rich-grid-renderer";
   const PLAYLISTS_CONTENTS_SELECTOR = ":scope > #contents";
   const PLAYLISTS_OUTER_ROW_SELECTOR = "ytd-rich-item-renderer, ytd-rich-grid-media";
@@ -68,7 +112,7 @@
   const PAGE_RELEVANT_SELECTOR = `${PLAYLISTS_GRID_SELECTOR}, ${PLAYLISTS_OUTER_ROW_SELECTOR}, ${PLAYLIST_RENDERER_SELECTOR}`;
 
   const ITEM_TEXT_SELECTOR =
-    "#label, #video-title, .playlist-title, yt-formatted-string[id='label'], yt-formatted-string, span#label, a#video-title";
+    "#label, #video-title, .playlist-title, yt-formatted-string[id='label'], yt-formatted-string, span#label, a#video-title, .ytListItemViewModelTitle";
   const FILTER_BASE_STYLES = `
     .ytpf-inline {
       position: sticky;
@@ -176,11 +220,14 @@
     .ytpf-modal-expanded #playlists,
     .ytpf-modal-expanded #contents,
     .ytpf-modal-expanded yt-checkbox-list-renderer,
+    .ytpf-modal-expanded yt-list-view-model,
     .ytpf-modal-expanded [role='listbox'] {
       max-height: min(68vh, 720px) !important;
       overflow-y: auto !important;
     }
-    .ytpf-modal-expanded tp-yt-paper-dialog {
+    .ytpf-modal-expanded tp-yt-paper-dialog,
+    .ytpf-modal-expanded.yt-contextual-sheet-layout,
+    yt-contextual-sheet-layout.ytpf-modal-expanded {
       max-height: min(84vh, 860px) !important;
     }
   `;
@@ -792,7 +839,15 @@
   }
 
   function collectRows(host) {
-    const directRows = unique(queryAllDeep(MODAL_ROW_SELECTOR, host)).filter(
+    // Drop any row that is a descendant of another matched row. The new save
+    // modal nests yt-list-item-view-model inside toggleable-list-item-view-model
+    // and both match MODAL_ROW_SELECTOR; keeping the outer wrapper means
+    // hideRow() actually collapses the visible row instead of leaving an empty
+    // shell behind.
+    const dropNested = (rows) =>
+      rows.filter((row) => !rows.some((other) => other !== row && other.contains(row)));
+
+    const directRows = dropNested(unique(queryAllDeep(MODAL_ROW_SELECTOR, host))).filter(
       (row) =>
         (isVisible(row) || hiddenRows.has(row)) && getItemText(row).length > 0,
     );
