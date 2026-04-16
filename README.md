@@ -23,11 +23,13 @@ Available on the [Chrome Web Store](https://chromewebstore.google.com/) (search 
 3. Enable **Developer mode** (top right)
 4. Click **Load unpacked** and select the `src/` folder
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup including OAuth credentials.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 
 ## How it works
 
-A content script detects YouTube's Save dialog, injects a search bar, and filters playlist rows as you type. If you have more than 200 playlists, a "Load all playlists" prompt appears — click it to fetch your full library directly from YouTube.
+A content script detects YouTube's Save dialog, injects a search bar, and filters playlist rows as you type. In the background, it uses YouTube's own internal API (the same one youtube.com uses) to fetch your full playlist library — authenticated with your existing YouTube session, no OAuth required. Results from both the modal's visible rows and your full library are ranked together with BM25 scoring.
+
+For an in-depth look at the architecture, see [`architecture/overview.md`](architecture/overview.md).
 
 ## Roadmap
 
