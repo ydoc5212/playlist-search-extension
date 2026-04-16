@@ -17,7 +17,7 @@
   <h2>Overview</h2>
   <p>
     YouTube Playlist Search is a Chrome extension that adds an in-page search bar to YouTube's
-    playlist selection interfaces. It uses the YouTube Data API v3 to fetch your playlists and
+    playlist selection interfaces. It fetches your playlists directly from YouTube and lets you
     save videos to them.
   </p>
 
@@ -27,14 +27,12 @@
     extension developer or any third party. No analytics, tracking, or remote logging is performed.
   </p>
 
-  <h2>YouTube Data API Usage</h2>
+  <h2>External Services</h2>
   <p>
     The extension communicates with the following Google services and no other external servers:
   </p>
   <ul>
-    <li><code>googleapis.com</code> &mdash; YouTube Data API
-      (<code>playlists.list</code>, <code>channels.list</code>,
-      <code>playlistItems.insert</code>)</li>
+    <li><code>youtube.com</code> &mdash; Fetches playlist data directly from YouTube</li>
     <li><code>oauth2.googleapis.com</code> &mdash; OAuth 2.0 authentication and
       token refresh</li>
     <li><code>accounts.google.com</code> &mdash; Google sign-in consent screen</li>
@@ -56,7 +54,7 @@
     <li>Custom OAuth client configuration, if provided by the user</li>
   </ul>
   <p>
-    This data is used solely to authenticate and make YouTube Data API requests. It is never
+    This data is used solely to authenticate and fetch your playlists. It is never
     transmitted to the extension developer or any server other than Google's OAuth and API
     endpoints.
   </p>
@@ -64,8 +62,8 @@
   <h2>Permissions and Processing</h2>
   <p>
     The extension runs as a content script on <code>youtube.com</code> pages and uses a background
-    service worker to manage API calls and token storage. Playlist names are also read from the
-    YouTube page DOM. All filtering is performed locally in your browser.
+    service worker to manage playlist fetching and token storage. Playlist data is read directly
+    from YouTube pages. All filtering is performed locally in your browser.
   </p>
 
   <h2>Third-Party Code</h2>
@@ -82,11 +80,7 @@
     including the Limited Use requirements.
   </p>
   <p>
-    The extension also complies with the
-    <a href="https://developers.google.com/youtube/terms/api-services-terms-of-service">YouTube API Services Terms of Service</a>.
-  </p>
-  <p>
-    Specifically, the extension limits its use of data obtained through Google APIs to providing
+    Specifically, the extension limits its use of data obtained through Google services to providing
     and improving the playlist search functionality described in this policy. It does not:
   </p>
   <ul>

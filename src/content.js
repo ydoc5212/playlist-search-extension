@@ -62,7 +62,7 @@
   const PAGE_RELEVANT_SELECTOR = `${PLAYLISTS_GRID_SELECTOR}, ${PLAYLISTS_OUTER_ROW_SELECTOR}, ${PLAYLIST_RENDERER_SELECTOR}`;
 
   const ITEM_TEXT_SELECTOR =
-    "#label, #video-title, .playlist-title, yt-formatted-string[id='label'], yt-formatted-string, span#label, a#video-title, h3";
+    "#label, #video-title, .playlist-title, yt-formatted-string[id='label'], yt-formatted-string, span#label, a#video-title";
   const FILTER_BASE_STYLES = `
     .ytpf-inline {
       position: sticky;
@@ -422,17 +422,16 @@
 
     if (Array.isArray(apiPlaylists) && apiPlaylists.length) {
       const domIds = new Set();
-      const domTitles = new Set();
       rows.forEach((row) => {
         const id = getRowPlaylistId(row);
         if (id) domIds.add(id);
-        const t = getItemText(row);
-        if (t) domTitles.add(t);
       });
+      // Only dedup by playlist ID, never by title. Title-based dedup caused
+      // exact-match playlists (e.g. "Favorites") to be silently excluded
+      // when a DOM row shared the same normalized text.
       apiPlaylists.forEach((pl) => {
         if (domIds.has(pl.id)) return;
         const t = normalizeText(pl.title || "");
-        if (domTitles.has(t)) return;
         docs.push({
           id: `api:${pl.id}`,
           text: t,
@@ -485,11 +484,17 @@
 
       if (result.source === "dom") {
         const row = ctrl.rows[Number(result.ref)];
-        if (!row) return;
+        if (!row) {
+          console.warn("[ytpf] BM25 ref dom:%s has no matching row (stale index?)", result.ref);
+          return;
+        }
         matches.push({ source: "dom", row, score: Number(result.score) || 0, terms });
       } else {
         const playlist = apiMap.get(result.ref);
-        if (!playlist) return;
+        if (!playlist) {
+          console.warn("[ytpf] BM25 ref api:%s not in playlist cache", result.ref);
+          return;
+        }
         matches.push({ source: "api", playlist, score: Number(result.score) || 0, terms });
       }
     });
@@ -586,7 +591,6 @@
       label?.textContent ||
       row.getAttribute("aria-label") ||
       row.getAttribute("title") ||
-      row.textContent ||
       ""
     );
     const text = normalizeText(rawText);
@@ -797,7 +801,7 @@
     if (directRows.length) return directRows;
 
     const checkboxes = queryAllDeep(CHECKBOX_SELECTOR, host);
-    if (checkboxes.length < 2) return [];
+    if (!checkboxes.length) return [];
 
     const genericRows = unique(
       checkboxes
@@ -805,10 +809,10 @@
         .filter((row) => row && (isVisible(row) || hiddenRows.has(row))),
     ).filter((row) => {
       const text = getItemText(row);
-      return text.length >= 2 && text.length <= 200;
+      return text.length >= 1 && text.length <= 300;
     });
 
-    if (genericRows.length < 3) return [];
+    if (genericRows.length < 2) return [];
     return genericRows;
   }
 
@@ -1291,7 +1295,19 @@
 
       const handleSave = () => {
         const videoId = getCurrentVideoId(ctrl.host);
-        if (!videoId) return;
+        if (!videoId) {
+          console.warn("[ytpf] Could not determine video ID for save action");
+          action.innerHTML = ICON_PLUS;
+          title.style.color = "var(--yt-spec-text-secondary, #aaa)";
+          title.textContent = "Could not find video ID";
+          setTimeout(() => {
+            title.style.color = "";
+            const ranges = getHighlightRanges(label, synthTerms);
+            if (ranges.length) { title.innerHTML = buildHighlightHtml(label, ranges); }
+            else { title.textContent = label; }
+          }, 2000);
+          return;
+        }
 
         suppressMutations(160);
         action.disabled = true;
@@ -1302,7 +1318,8 @@
             action.innerHTML = ICON_CHECK;
             action.classList.add(SYNTH_DONE_CLASS);
           })
-          .catch(() => {
+          .catch((err) => {
+            console.warn("[ytpf] Save to playlist failed:", err);
             suppressMutations(160);
             action.disabled = false;
             action.innerHTML = ICON_PLUS;
@@ -1326,6 +1343,7 @@
 
       row.appendChild(action);
       row.appendChild(title);
+      if (!ctrl.parent?.isConnected) return;
       ctrl.parent.appendChild(row);
       ctrl.synthRows.push(row);
     });
@@ -1352,11 +1370,9 @@
     ctrl.apiToken = token;
 
     try {
-      if (!apiSessionCache.playlists) {
-        await loadAllPlaylists();
-      }
-    } catch {
-      // Silently fail — user still has YouTube's native list
+      await loadAllPlaylists();
+    } catch (err) {
+      console.warn("[ytpf] Playlist fetch failed:", err);
     } finally {
       if (ctrl.apiToken === token) {
         ctrl.bm25 = createUnifiedIndex(ctrl.rows, apiSessionCache.playlists);

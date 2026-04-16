@@ -2,12 +2,12 @@
 
 Can't find your playlist when saving a video? YouTube's "Save to playlist" modal has no search, and it only loads your most recent 200 playlists. If you have more, they're invisible.
 
-This extension adds a search bar directly inside YouTube's Save modal. Type to filter, and it searches all your playlists — even beyond the 200 cap — using the YouTube API.
+This extension adds a search bar directly inside YouTube's Save modal. Type to filter, and it searches all your playlists — even beyond the 200 cap.
 
 ## Features
 
 - **Search bar inside YouTube's Save to playlist modal** — filters as you type
-- **Loads all playlists** — YouTube caps at 200; the extension uses the YouTube API to find the rest
+- **Loads all playlists** — YouTube caps at 200; the extension fetches the rest directly from YouTube
 - **Save to any playlist** — even ones YouTube didn't load in the modal
 - **Match highlighting** in playlist names
 - **BM25 ranking** for relevant results
@@ -27,7 +27,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup including OAut
 
 ## How it works
 
-A content script detects YouTube's Save dialog, injects a search bar, and filters playlist rows as you type. If you have more than 200 playlists, a "Load all playlists" prompt appears — click it to authorize the extension to fetch your full library via the YouTube API.
+A content script detects YouTube's Save dialog, injects a search bar, and filters playlist rows as you type. If you have more than 200 playlists, a "Load all playlists" prompt appears — click it to fetch your full library directly from YouTube.
 
 ## Roadmap
 

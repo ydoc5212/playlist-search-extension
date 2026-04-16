@@ -20,11 +20,11 @@ Thanks for your interest in YouTube Playlist Search! Here's how to get started.
 
 ### OAuth Setup
 
-The extension uses the YouTube Data API to fetch playlists beyond YouTube's 200 cap. The published extension ships with its own OAuth client ID, but for local development you'll need your own:
+The extension uses OAuth to authenticate and fetch playlists beyond YouTube's 200 cap. The published extension ships with its own OAuth client ID, but for local development you'll need your own:
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or use an existing one)
-3. Enable the **YouTube Data API v3** under APIs & Services
+3. Under APIs & Services, ensure OAuth consent screen is configured
 4. Go to **Credentials** > **Create Credentials** > **OAuth client ID**
    - Application type: **Chrome extension**
    - Item ID: your extension's ID from `chrome://extensions` (changes each time you load unpacked)
@@ -39,7 +39,7 @@ The extension uses the YouTube Data API to fetch playlists beyond YouTube's 200 
 
 ```
 src/             — Extension source (load this folder as unpacked)
-  background.js  — Service worker: OAuth flow, YouTube API calls, playlist caching
+  background.js  — Service worker: OAuth flow, playlist fetching, caching
   content.js     — Content script: injects search UI into YouTube's Save modal and playlist feed
   styles.css     — Injected styles (supports dark/light theme)
   vendor/        — Vendored dependencies (MiniSearch for BM25 ranking)
