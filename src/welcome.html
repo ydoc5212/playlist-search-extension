@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YouTube Playlist Search — Welcome</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --surface: #f9f9f9;
+        --border: rgba(0, 0, 0, 0.1);
+        --text: #0f0f0f;
+        --text-muted: #606060;
+        --btn-bg: #0f0f0f;
+        --btn-text: #ffffff;
+        --btn-bg-hover: #272727;
+        --accent: #0b8043;
+        --error: #c5221f;
+        --step-pending-bg: rgba(0, 0, 0, 0.06);
+        --step-pending-border: rgba(0, 0, 0, 0.12);
+        font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f0f0f;
+          --surface: #1f1f1f;
+          --border: rgba(255, 255, 255, 0.1);
+          --text: #f1f1f1;
+          --text-muted: #aaaaaa;
+          --btn-bg: #f1f1f1;
+          --btn-text: #0f0f0f;
+          --btn-bg-hover: #ffffff;
+          --accent: #4ade80;
+          --error: #f87171;
+          --step-pending-bg: rgba(255, 255, 255, 0.04);
+          --step-pending-border: rgba(255, 255, 255, 0.1);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--text);
+        padding: 48px 20px;
+      }
+      main {
+        width: 100%;
+        max-width: 560px;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .demo {
+        margin: 0 0 28px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+        line-height: 0;
+      }
+      .demo video {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .lede {
+        font-size: 15px;
+        line-height: 1.5;
+        margin: 0;
+        color: var(--text-muted);
+      }
+      .step {
+        display: flex;
+        gap: 16px;
+        padding: 20px;
+        border: 1px solid var(--step-pending-border);
+        border-radius: 12px;
+        background: var(--step-pending-bg);
+        margin-bottom: 12px;
+        transition: border-color 120ms ease, background 120ms ease;
+      }
+      .step[data-state="active"] {
+        border-color: var(--text);
+        background: var(--surface);
+      }
+      .step[data-state="complete"] {
+        border-color: var(--accent);
+        background: var(--surface);
+      }
+      .step-marker {
+        flex: 0 0 28px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid var(--text-muted);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1;
+      }
+      .step[data-state="active"] .step-marker {
+        border-color: var(--text);
+        color: var(--text);
+      }
+      .step[data-state="complete"] .step-marker {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--bg);
+      }
+      .step-marker svg {
+        width: 16px;
+        height: 16px;
+        display: none;
+      }
+      .step[data-state="complete"] .step-marker svg {
+        display: block;
+      }
+      .step[data-state="complete"] .step-marker .step-num {
+        display: none;
+      }
+      .step-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .step-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 2px 0 6px;
+      }
+      .step-desc {
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0 0 14px;
+        color: var(--text-muted);
+      }
+      .step-desc strong {
+        color: var(--text);
+        font-weight: 500;
+      }
+      button {
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        background: var(--btn-bg);
+        color: var(--btn-text);
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        background: var(--btn-bg-hover);
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--text-muted);
+        min-height: 18px;
+      }
+      .status[data-state="ok"] {
+        color: var(--accent);
+      }
+      .status[data-state="err"] {
+        color: var(--error);
+      }
+      .surfaces {
+        margin-top: 28px;
+        padding: 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .surfaces h2 {
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin: 0 0 12px;
+      }
+      .surfaces ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .surfaces li {
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 6px 0;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .surfaces li::before {
+        content: "";
+        flex: 0 0 6px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        margin-top: 8px;
+      }
+      .surfaces code {
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: 13px;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--step-pending-bg);
+      }
+      .tip {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-left: 3px solid var(--accent);
+        background: var(--surface);
+        border-radius: 0 8px 8px 0;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--text-muted);
+      }
+      .tip strong {
+        color: var(--text);
+        font-weight: 600;
+        margin-right: 4px;
+      }
+      footer {
+        margin-top: 32px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        justify-content: center;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: var(--text);
+        text-decoration: underline;
+      }
+      footer .sep {
+        opacity: 0.4;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>YouTube Playlist Search</h1>
+        <p class="lede">
+          Search every playlist you've ever made — right inside YouTube's Save
+          dialog and your playlists library.
+        </p>
+      </header>
+
+      <figure class="demo" aria-label="Filter bar demo inside YouTube's Save to playlist dialog">
+        <video
+          src="welcome-assets/demo.webm"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+        ></video>
+      </figure>
+
+      <section class="step" id="step-grant" data-state="active">
+        <div class="step-marker">
+          <span class="step-num">1</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+            />
+          </svg>
+        </div>
+        <div class="step-body">
+          <h2 class="step-title">Grant access to youtube.com</h2>
+          <p class="step-desc" id="grant-desc">
+            So the extension can <strong>inject a search box</strong> into the
+            Save dialog and your playlists page. It runs only on youtube.com,
+            and <strong>nothing leaves your device</strong>.
+          </p>
+          <button id="grant" type="button">Grant access to YouTube</button>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="step" id="step-open" data-state="pending">
+        <div class="step-marker">
+          <span class="step-num">2</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+            />
+          </svg>
+        </div>
+        <div class="step-body">
+          <h2 class="step-title">Open your playlists library</h2>
+          <p class="step-desc">
+            Try the search bar at the top of your library — or save any video
+            on YouTube to see it inside the Save dialog.
+          </p>
+          <button id="open" type="button" disabled>
+            Open playlists library
+          </button>
+        </div>
+      </section>
+
+      <section class="surfaces">
+        <h2>Where you'll see it</h2>
+        <ul>
+          <li>
+            The <strong>Save to playlist</strong> dialog on any YouTube video
+          </li>
+          <li>
+            Your playlists library at <code>youtube.com/feed/playlists</code>
+          </li>
+        </ul>
+      </section>
+
+      <aside class="tip">
+        <strong>Tip:</strong>
+        Search works for <em>any</em> playlist you own — even ones beyond
+        YouTube's 200-playlist limit that the Save dialog can't load on its own.
+      </aside>
+
+      <footer>
+        <span id="version">v—</span>
+        <span class="sep">·</span>
+        <a
+          href="https://github.com/ydoc5212/playlist-search-extension"
+          target="_blank"
+          rel="noopener"
+          >Source</a
+        >
+        <span class="sep">·</span>
+        <a
+          href="https://ydoc5212.github.io/playlist-search-extension/privacy-policy.html"
+          target="_blank"
+          rel="noopener"
+          >Privacy</a
+        >
+        <span class="sep">·</span>
+        <a
+          href="https://github.com/ydoc5212/playlist-search-extension/issues"
+          target="_blank"
+          rel="noopener"
+          >Report an issue</a
+        >
+      </footer>
+    </main>
+    <script src="onboarding-state.js"></script>
+    <script src="welcome.js"></script>
+  </body>
+</html>
