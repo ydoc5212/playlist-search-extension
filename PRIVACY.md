@@ -34,7 +34,7 @@ All search, ranking, and filtering is performed locally in your browser.
 
 ## Permissions
 
-The extension requests **no** Chrome permissions and **no** host permissions. It runs only as a content script on `youtube.com` (and its subdomains), which is the only site it needs access to. There is no background service worker and no popup.
+The extension requests **no** Chrome API permissions (the `permissions` array in `manifest.json` is empty). Its only site access is a content script injected into `https://www.youtube.com/*` — the single host it needs in order to place a search bar inside YouTube's save-to-playlist dialog and playlist feed. It does not run on any other site, subdomain, or scheme. There is no background service worker and no popup.
 
 ## Third-Party Code
 

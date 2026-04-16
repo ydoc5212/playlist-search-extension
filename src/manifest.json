@@ -9,10 +9,7 @@
   "permissions": [],
   "content_scripts": [
     {
-      "matches": [
-        "*://youtube.com/*",
-        "*://*.youtube.com/*"
-      ],
+      "matches": ["https://www.youtube.com/*"],
       "js": ["vendor/minisearch.js", "content.js"],
       "css": ["styles.css"],
       "run_at": "document_start"

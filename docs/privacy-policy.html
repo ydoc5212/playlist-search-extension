@@ -77,10 +77,12 @@
 
   <h2>Permissions</h2>
   <p>
-    The extension requests <strong>no</strong> Chrome permissions and <strong>no</strong> host
-    permissions. It runs only as a content script on <code>youtube.com</code> (and its
-    subdomains), which is the only site it needs access to. There is no background service worker
-    and no popup.
+    The extension requests <strong>no</strong> Chrome API permissions (the
+    <code>permissions</code> array in <code>manifest.json</code> is empty). Its only site access
+    is a content script injected into <code>https://www.youtube.com/*</code> &mdash; the single
+    host it needs in order to place a search bar inside YouTube's save-to-playlist dialog and
+    playlist feed. It does not run on any other site, subdomain, or scheme. There is no
+    background service worker and no popup.
   </p>
 
   <h2>Third-Party Code</h2>
