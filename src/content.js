@@ -7,15 +7,33 @@
   const MODAL_EXPANDED_CLASS = "ytpf-modal-expanded";
   const MODAL_INLINE_CLASS = "ytpf-inline-modal";
   const MODAL_API_RESULTS_LIMIT = 24;
-  const MODAL_API_CAP_THRESHOLD = 200;
   const ROW_MATCH_CLASS = "ytpf-row-match";
   const SYNTH_DONE_CLASS = "ytpf-synth-done";
   const ICON_PLUS = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
   const ICON_CHECK = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-  const MSG_CONNECT = "YTPF_CONNECT";
-  const MSG_SAVE_VIDEO = "YTPF_SAVE_VIDEO";
-  const MSG_GET_PLAYLISTS = "YTPF_GET_PLAYLISTS";
-  const MSG_GET_AUTH_STATUS = "YTPF_GET_AUTH_STATUS";
+
+  const INNERTUBE_API_KEY_FALLBACK = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+  const INNERTUBE_CLIENT_VERSION_FALLBACK = "2.20260206.01.00";
+  const PLAYLIST_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+  let _innertubeConfig = null;
+  function getInnertubeConfig() {
+    if (_innertubeConfig) return _innertubeConfig;
+    for (const script of document.getElementsByTagName("script")) {
+      const text = script.textContent;
+      if (text.length > 500000 || !text.includes("INNERTUBE_API_KEY")) continue;
+      const keyMatch = text.match(/"INNERTUBE_API_KEY"\s*:\s*"([^"]+)"/);
+      const verMatch = text.match(/"INNERTUBE_CLIENT_VERSION"\s*:\s*"([^"]+)"/);
+      if (keyMatch) {
+        _innertubeConfig = {
+          apiKey: keyMatch[1],
+          clientVersion: verMatch?.[1] || INNERTUBE_CLIENT_VERSION_FALLBACK,
+        };
+        return _innertubeConfig;
+      }
+    }
+    return { apiKey: INNERTUBE_API_KEY_FALLBACK, clientVersion: INNERTUBE_CLIENT_VERSION_FALLBACK };
+  }
 
   const BM25_SEARCH_OPTIONS = {
     prefix: true,
@@ -199,30 +217,6 @@
     }
   `;
 
-  const PILL_BUTTON_STYLES = `
-    .ytpf-pill-btn {
-      height: 28px;
-      border: 1px solid rgba(6, 95, 212, 0.42);
-      border-radius: 14px;
-      padding: 0 12px;
-      background: transparent;
-      color: var(--yt-spec-call-to-action, #065fd4);
-      font-family: Roboto, Arial, sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .ytpf-pill-btn:hover {
-      background: rgba(6, 95, 212, 0.08);
-    }
-    .ytpf-pill-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-  `;
-
   const SYNTH_STYLES = `
     .ytpf-synth-row {
       display: flex;
@@ -279,52 +273,7 @@
     }
   `;
 
-  const CONNECT_BAR_STYLES = `
-    .ytpf-connect-bar {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-top: 1px solid var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
-    }
-    .ytpf-connect-msg {
-      font-family: Roboto, Arial, sans-serif;
-      font-size: 13px;
-      color: var(--yt-spec-text-secondary, #606060);
-      text-align: center;
-    }
-    .ytpf-connect-error {
-      color: #c00;
-    }
-    .ytpf-chip-btn {
-      height: 32px;
-      border: none;
-      border-radius: 8px;
-      padding: 0 12px;
-      background: var(--yt-spec-badge-chip-color, rgba(0, 0, 0, 0.05));
-      color: var(--yt-spec-text-primary, #0f0f0f);
-      font-family: Roboto, Arial, sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .ytpf-chip-btn:hover {
-      background: var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
-    }
-    .ytpf-chip-btn:active {
-      background: var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.15));
-    }
-    .ytpf-chip-btn:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-  `;
-
-  const ALL_STYLES = [FILTER_BASE_STYLES, MODAL_STYLES, MODAL_EXPANDED_STYLES, PAGE_STYLES, PILL_BUTTON_STYLES, SYNTH_STYLES, CONNECT_BAR_STYLES].join("\n");
+  const ALL_STYLES = [FILTER_BASE_STYLES, MODAL_STYLES, MODAL_EXPANDED_STYLES, PAGE_STYLES, SYNTH_STYLES].join("\n");
 
   const textCache = new WeakMap();
   const hiddenRows = new WeakMap();
@@ -335,12 +284,8 @@
   let _onNavigateFinish = null;
   let _onPageDataUpdated = null;
   const apiSessionCache = {
-    authStatus: null,
     playlists: null,
     fetchedAt: 0,
-    loadingAuth: null,
-    loadingPlaylists: null,
-    error: "",
   };
   let suppressMutationsUntil = 0;
 
@@ -422,12 +367,6 @@
     return performance.now();
   }
 
-  function waitMs(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
-
   function suppressMutations(ms = 120) {
     suppressMutationsUntil = Math.max(suppressMutationsUntil, nowMs() + ms);
   }
@@ -461,35 +400,67 @@
     return null;
   }
 
-  function createBm25Index(rows) {
+  function createUnifiedIndex(rows, apiPlaylists) {
     if (typeof MiniSearch !== "function") return null;
 
-    const bm25 = new MiniSearch({
+    const index = new MiniSearch({
       fields: ["text"],
-      storeFields: ["rowId"],
+      storeFields: ["source", "ref"],
       searchOptions: BM25_SEARCH_OPTIONS,
     });
 
-    const docs = rows.map((row, index) => ({
-      id: String(index),
-      rowId: String(index),
-      text: getItemText(row),
-    }));
+    const docs = [];
 
-    bm25.addAll(docs);
-    return bm25;
+    rows.forEach((row, i) => {
+      docs.push({
+        id: `dom:${i}`,
+        text: getItemText(row),
+        source: "dom",
+        ref: String(i),
+      });
+    });
+
+    if (Array.isArray(apiPlaylists) && apiPlaylists.length) {
+      const domIds = new Set();
+      const domTitles = new Set();
+      rows.forEach((row) => {
+        const id = getRowPlaylistId(row);
+        if (id) domIds.add(id);
+        const t = getItemText(row);
+        if (t) domTitles.add(t);
+      });
+      apiPlaylists.forEach((pl) => {
+        if (domIds.has(pl.id)) return;
+        const t = normalizeText(pl.title || "");
+        if (domTitles.has(t)) return;
+        docs.push({
+          id: `api:${pl.id}`,
+          text: t,
+          source: "api",
+          ref: pl.id,
+        });
+      });
+    }
+
+    index.addAll(docs);
+    return index;
   }
 
-  function searchWithBm25(ctrl, query) {
-    const useLiteralMatch = query.length < 2;
+  function buildApiPlaylistMap() {
+    const map = new Map();
+    (apiSessionCache.playlists || []).forEach((pl) => map.set(pl.id, pl));
+    return map;
+  }
 
-    if (!ctrl.bm25 || useLiteralMatch) {
+  function searchUnified(ctrl, query) {
+    if (!ctrl.bm25 || query.length < 2) {
       return ctrl.rows
         .map((row) => {
           const text = getItemText(row);
           const at = text.indexOf(query);
           if (at < 0) return null;
           return {
+            source: "dom",
             row,
             score: 1000 - at,
             terms: query.split(" ").filter(Boolean),
@@ -497,26 +468,30 @@
         })
         .filter(Boolean);
     }
-    const results = ctrl.bm25.search(query, BM25_SEARCH_OPTIONS);
 
+    const results = ctrl.bm25.search(query, BM25_SEARCH_OPTIONS);
     const matches = [];
-    const seenRows = new Set();
+    const seen = new Set();
+    const apiMap = buildApiPlaylistMap();
 
     results.forEach((result) => {
-      const rowIndex = Number(result.id ?? result.rowId);
-      const row = ctrl.rows[rowIndex];
-      if (!row || seenRows.has(row)) return;
-      seenRows.add(row);
+      const key = `${result.source}:${result.ref}`;
+      if (seen.has(key)) return;
+      seen.add(key);
 
       const terms = Array.isArray(result.terms)
         ? result.terms.map(normalizeText).filter(Boolean)
         : [];
 
-      matches.push({
-        row,
-        score: Number(result.score) || 0,
-        terms,
-      });
+      if (result.source === "dom") {
+        const row = ctrl.rows[Number(result.ref)];
+        if (!row) return;
+        matches.push({ source: "dom", row, score: Number(result.score) || 0, terms });
+      } else {
+        const playlist = apiMap.get(result.ref);
+        if (!playlist) return;
+        matches.push({ source: "api", playlist, score: Number(result.score) || 0, terms });
+      }
     });
 
     return matches;
@@ -589,6 +564,23 @@
   function getItemText(row) {
     if (textCache.has(row)) return textCache.get(row);
 
+    const data = row.data || row.__data;
+    if (data) {
+      const dataTitle =
+        data.title?.simpleText ||
+        data.title?.runs?.[0]?.text ||
+        (typeof data.title === "string" ? data.title : null) ||
+        data.label?.simpleText ||
+        data.label?.runs?.[0]?.text ||
+        (typeof data.label === "string" ? data.label : null) ||
+        null;
+      if (dataTitle) {
+        const text = normalizeText(dataTitle);
+        textCache.set(row, text);
+        return text;
+      }
+    }
+
     const label = row.querySelector(ITEM_TEXT_SELECTOR);
     const rawText = (
       label?.textContent ||
@@ -641,6 +633,27 @@
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
+  }
+
+  function getRowPlaylistId(row) {
+    const data = row.data || row.__data;
+    if (data?.playlistId) return data.playlistId;
+    const onTap = data?.onTap || data?.data?.onTap;
+    const cmd = onTap?.addToPlaylistCommand || onTap?.toggledServiceEndpoint;
+    if (cmd?.playlistId) return cmd.playlistId;
+    return null;
+  }
+
+  function buildHighlightHtml(text, ranges) {
+    let html = "";
+    let cursor = 0;
+    for (const { from, to } of ranges) {
+      if (from > cursor) html += escapeHtml(text.slice(cursor, from));
+      html += `<mark class="ytpf-mark">${escapeHtml(text.slice(from, to))}</mark>`;
+      cursor = to;
+    }
+    if (cursor < text.length) html += escapeHtml(text.slice(cursor));
+    return html;
   }
 
   function ensureOriginalLabelHtml(label) {
@@ -1032,33 +1045,178 @@
   }
 
 
-  function runtimeMessage(message) {
-    return new Promise((resolve, reject) => {
-      if (
-        typeof chrome === "undefined" ||
-        !chrome.runtime ||
-        typeof chrome.runtime.sendMessage !== "function"
-      ) {
-        reject(new Error("Extension context unavailable. Reload the page and try again."));
-        return;
+  function getSapisid() {
+    const match = document.cookie.match(/SAPISID=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
+  function isLoggedIn() {
+    return Boolean(getSapisid());
+  }
+
+  async function getSapisidHash() {
+    const sapisid = getSapisid();
+    if (!sapisid) return null;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const input = `${timestamp} ${sapisid} https://www.youtube.com`;
+    const buffer = await crypto.subtle.digest(
+      "SHA-1",
+      new TextEncoder().encode(input),
+    );
+    const hash = Array.from(new Uint8Array(buffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return `SAPISIDHASH ${timestamp}_${hash}`;
+  }
+
+  async function innertubeRequest(endpoint, body) {
+    const auth = await getSapisidHash();
+    if (!auth) throw new Error("Not signed in to YouTube");
+
+    const { apiKey, clientVersion } = getInnertubeConfig();
+
+    const response = await fetch(
+      `https://www.youtube.com/youtubei/v1/${endpoint}?key=${apiKey}&prettyPrint=false`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: auth,
+          "X-Goog-AuthUser": "0",
+          "X-Origin": "https://www.youtube.com",
+        },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: "WEB",
+              clientVersion,
+              hl: document.documentElement.lang || "en",
+            },
+          },
+          ...body,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`YouTube request failed (HTTP ${response.status})`);
+    }
+
+    return response.json();
+  }
+
+  function rendererTitle(r) {
+    return r.title?.runs?.[0]?.text || r.title?.simpleText || "Untitled";
+  }
+
+  function parsePlaylistRenderers(data) {
+    const playlists = [];
+    let continuation = null;
+
+    function visitItems(items) {
+      if (!Array.isArray(items)) return;
+      for (const item of items) {
+        const gpr = item.gridPlaylistRenderer;
+        if (gpr?.playlistId) {
+          playlists.push({
+            id: gpr.playlistId,
+            title: rendererTitle(gpr),
+            itemCount:
+              parseInt(
+                gpr.videoCountShortText?.simpleText ||
+                  gpr.thumbnailText?.runs?.[0]?.text ||
+                  "0",
+                10,
+              ) || 0,
+          });
+          continue;
+        }
+
+        const pr = item.playlistRenderer;
+        if (pr?.playlistId) {
+          playlists.push({
+            id: pr.playlistId,
+            title: rendererTitle(pr),
+            itemCount: parseInt(pr.videoCount || "0", 10) || 0,
+          });
+          continue;
+        }
+
+        const rich = item.richItemRenderer?.content;
+        if (rich) visitItems([rich]);
+
+        const cont =
+          item.continuationItemRenderer?.continuationEndpoint
+            ?.continuationCommand?.token;
+        if (cont) continuation = cont;
       }
-      chrome.runtime.sendMessage(message, (response) => {
-        const error = chrome.runtime.lastError;
-        if (error) {
-          reject(new Error(error.message || "Extension messaging failed"));
-          return;
+    }
+
+    const tabs =
+      data?.contents?.twoColumnBrowseResultsRenderer?.tabs || [];
+    for (const tab of tabs) {
+      const content = tab?.tabRenderer?.content;
+      const sections =
+        content?.sectionListRenderer?.contents || [];
+      for (const section of sections) {
+        const grid =
+          section?.itemSectionRenderer?.contents?.[0]?.gridRenderer;
+        if (grid) {
+          visitItems(grid.items);
+          const gc = grid.continuations?.[0]?.nextContinuationData?.continuation;
+          if (gc) continuation = gc;
         }
-        if (!response) {
-          reject(new Error("No response from extension service worker"));
-          return;
+        const shelf = section?.shelfRenderer?.content?.gridRenderer;
+        if (shelf) {
+          visitItems(shelf.items);
         }
-        if (!response.ok) {
-          reject(new Error(response.error || "Request failed"));
-          return;
-        }
-        resolve(response);
-      });
+      }
+      const richGrid = content?.richGridRenderer?.contents;
+      if (richGrid) visitItems(richGrid);
+    }
+
+    const actions = data?.onResponseReceivedActions || [];
+    for (const action of actions) {
+      visitItems(
+        action?.appendContinuationItemsAction?.continuationItems ||
+          action?.reloadContinuationItemsCommand?.continuationItems ||
+          [],
+      );
+    }
+
+    return { playlists, continuation };
+  }
+
+  async function innertubeLoadPlaylists() {
+    const byId = new Map();
+    let token = null;
+
+    let data = await innertubeRequest("browse", {
+      browseId: "FEplaylist_aggregation",
     });
+
+    for (let page = 0; page < 50; page += 1) {
+      const { playlists, continuation } = parsePlaylistRenderers(data);
+      for (const pl of playlists) {
+        if (!byId.has(pl.id)) byId.set(pl.id, pl);
+      }
+      token = continuation;
+      if (!token) break;
+      data = await innertubeRequest("browse", { continuation: token });
+    }
+
+    return [...byId.values()];
+  }
+
+  async function innertubeSaveVideo(playlistId, videoId) {
+    const data = await innertubeRequest("browse/edit_playlist", {
+      playlistId,
+      actions: [{ action: "ACTION_ADD_VIDEO", addedVideoId: videoId }],
+    });
+    if (data?.status !== "STATUS_SUCCEEDED") {
+      throw new Error("Failed to save video to playlist");
+    }
+    return data;
   }
 
   function getCurrentVideoId(host) {
@@ -1092,121 +1250,24 @@
 
 
 
-  function searchApiPlaylists(playlists, query) {
-    if (!query) return [];
-    const normalizedQuery = normalizeText(query);
-    if (!normalizedQuery) return [];
-
-    const terms = splitTerms(normalizedQuery);
-    return playlists
-      .map((playlist) => {
-        const text = normalizeText(playlist.title);
-        if (!text) return null;
-        const at = text.indexOf(normalizedQuery);
-        if (at >= 0) {
-          return { playlist, score: 1000 - at };
-        }
-        if (terms.length > 1 && terms.every((term) => text.includes(term))) {
-          const minAt = Math.min(...terms.map((term) => text.indexOf(term)));
-          return { playlist, score: 700 - Math.max(minAt, 0) };
-        }
-        return null;
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, MODAL_API_RESULTS_LIMIT)
-      .map((match) => match.playlist);
-  }
-
-  function modalAppearsCapped(ctrl) {
-    return Math.max(0, ctrl?.rows?.length || 0) >= MODAL_API_CAP_THRESHOLD;
-  }
-
-  function connectApi(ctrl, options = {}) {
-    if (!ctrl || ctrl.apiBusy || ctrl.apiSaving) return;
-    const forceReauth = Boolean(options.forceReauth);
-    if (forceReauth) {
-      apiSessionCache.playlists = null;
-      apiSessionCache.fetchedAt = 0;
-    }
-
-    ctrl.apiBusy = true;
-    ctrl.apiNotice = "";
-    renderConnectBar(ctrl);
-    renderModalApiUi(ctrl, normalizeText(ctrl.input.value));
-
-    runtimeMessage({ type: MSG_CONNECT, forceReauth })
-      .then((response) => {
-        apiSessionCache.authStatus = response.status;
-        return loadAllPlaylistsFromApi(ctrl, {
-          forceRefresh: true,
-          interactive: false,
-        });
-      })
-      .then((playlists) => {
-        if (!Array.isArray(playlists) || playlists.length === 0) {
-          ctrl.apiNotice =
-            "No playlists found \u2014 try a different account?";
-          return;
-        }
-      })
-      .catch((error) => {
-        ctrl.apiNotice = formatConnectError(error, apiSessionCache.authStatus);
-      })
-      .finally(() => {
-        ctrl.apiBusy = false;
-        renderConnectBar(ctrl);
-        renderModalApiUi(ctrl, normalizeText(ctrl.input.value));
-      });
-  }
-
-  function getModalApiPromptState(ctrl) {
-    const auth = apiSessionCache.authStatus || {};
-    const hasToken = Boolean(auth.tokenValid || auth.hasRefreshToken);
-    const hasApiLibrary =
-      Array.isArray(apiSessionCache.playlists) && apiSessionCache.playlists.length > 0;
-    const cappedAtYoutubeLimit = modalAppearsCapped(ctrl);
-    const needsPrompt = cappedAtYoutubeLimit && (!hasToken || !hasApiLibrary);
-    return {
-      cappedAtYoutubeLimit,
-      hasToken,
-      hasApiLibrary,
-      needsPrompt,
-    };
-  }
-
   function clearSynthRows(ctrl) {
     ctrl.synthRows.forEach((el) => el.remove());
     ctrl.synthRows = [];
   }
 
-  function renderModalApiUi(ctrl, query) {
+  function renderSynthRows(ctrl, apiMatches, query) {
     if (ctrl.surface !== "modal") return;
 
     clearSynthRows(ctrl);
 
-    const { hasApiLibrary } = getModalApiPromptState(ctrl);
-    const hasPlaylists = Array.isArray(apiSessionCache.playlists);
-    const hasQuery = Boolean(query);
-
-    if (!hasQuery || !hasPlaylists || !hasApiLibrary) return;
+    if (!query || !apiMatches.length) return;
     if (!ctrl.parent?.isConnected) return;
 
-    // Only show API playlists not already in YouTube's list
-    const ytTitles = new Set();
-    ctrl.rows.forEach((row) => {
-      const t = getItemText(row);
-      if (t) ytTitles.add(t);
-    });
-
-    const results = searchApiPlaylists(apiSessionCache.playlists, query)
-      .filter((p) => !ytTitles.has(normalizeText(p.title || "")));
-
-    if (!results.length) return;
-
+    const limited = apiMatches.slice(0, MODAL_API_RESULTS_LIMIT);
     const synthTerms = parseQueryTerms(query);
 
-    results.forEach((playlist) => {
+    limited.forEach((match) => {
+      const playlist = match.playlist;
       const label = playlist.title || "Untitled";
 
       const row = document.createElement("div");
@@ -1234,12 +1295,7 @@
 
         suppressMutations(160);
         action.disabled = true;
-        runtimeMessage({
-          type: MSG_SAVE_VIDEO,
-          playlistId: playlist.id,
-          videoId,
-          interactive: true,
-        })
+        innertubeSaveVideo(playlist.id, videoId)
           .then(() => {
             suppressMutations(160);
             action.disabled = false;
@@ -1275,138 +1331,37 @@
     });
   }
 
-  function normalizeErrorMessage(error) {
-    if (!error) return "Unknown error";
-    const message = typeof error === "string" ? error : error.message || String(error);
-    return message.replace(/^Error:\\s*/i, "");
-  }
-
-  function formatConnectError(error, authStatus) {
-    const message = normalizeErrorMessage(error);
-    if (!/redirect_uri_mismatch/i.test(message)) {
-      return message;
+  async function loadAllPlaylists() {
+    const now = Date.now();
+    if (
+      apiSessionCache.playlists &&
+      now - apiSessionCache.fetchedAt < PLAYLIST_CACHE_TTL_MS
+    ) {
+      return apiSessionCache.playlists;
     }
-    const uris = Array.isArray(authStatus?.redirectUris)
-      ? authStatus.redirectUris.filter(Boolean)
-      : authStatus?.redirectUri
-        ? [authStatus.redirectUri]
-        : [];
-    if (!uris.length) {
-      return "OAuth redirect URI mismatch. Add this extension redirect URI to your Google OAuth client and retry.";
-    }
-    return `OAuth redirect URI mismatch. Add one of these URIs to your Google OAuth client: ${uris.join(" , ")}`;
-  }
-
-  async function loadAllPlaylistsFromApi(ctrl, options = {}) {
-    const forceRefresh = Boolean(options.forceRefresh);
-    const interactive = Boolean(options.interactive);
-    const response = await runtimeMessage({
-      type: MSG_GET_PLAYLISTS,
-      interactive,
-      forceRefresh,
-    });
-
-    apiSessionCache.playlists = Array.isArray(response.playlists)
-      ? response.playlists
-      : [];
-    apiSessionCache.fetchedAt = Number(response.fetchedAt || 0);
-    return apiSessionCache.playlists;
+    const playlists = await innertubeLoadPlaylists();
+    apiSessionCache.playlists = playlists;
+    apiSessionCache.fetchedAt = Date.now();
+    return playlists;
   }
 
   async function bootstrapModalApi(ctrl) {
     if (ctrl.surface !== "modal") return;
+    if (!isLoggedIn()) return;
     const token = (ctrl.apiToken || 0) + 1;
     ctrl.apiToken = token;
-    ctrl.apiBusy = true;
-    ctrl.apiNotice = "";
-    renderModalApiUi(ctrl, normalizeText(ctrl.input.value));
 
     try {
-      if (!apiSessionCache.authStatus) {
-        const authResponse = await runtimeMessage({ type: MSG_GET_AUTH_STATUS });
-        apiSessionCache.authStatus = authResponse.status;
+      if (!apiSessionCache.playlists) {
+        await loadAllPlaylists();
       }
-
-      const auth = apiSessionCache.authStatus || {};
-      const canLoad = Boolean(auth.hasClientId) && Boolean(auth.tokenValid || auth.hasRefreshToken);
-
-      if (canLoad && !apiSessionCache.playlists) {
-        await loadAllPlaylistsFromApi(ctrl, {
-          forceRefresh: false,
-          interactive: false,
-        });
-      }
-    } catch (error) {
-      ctrl.apiNotice = normalizeErrorMessage(error);
+    } catch {
+      // Silently fail — user still has YouTube's native list
     } finally {
       if (ctrl.apiToken === token) {
-        ctrl.apiBusy = false;
-        renderModalApiUi(ctrl, normalizeText(ctrl.input.value));
-        renderConnectBar(ctrl);
+        ctrl.bm25 = createUnifiedIndex(ctrl.rows, apiSessionCache.playlists);
+        applyFilter(ctrl);
       }
-    }
-  }
-
-  function renderConnectBar(ctrl) {
-    if (ctrl.surface !== "modal") return;
-
-    let bar = ctrl.root.querySelector(".ytpf-connect-bar");
-
-    const auth = apiSessionCache.authStatus || {};
-    if (!auth.hasClientId) {
-      if (bar) bar.remove();
-      return;
-    }
-
-    const { needsPrompt, hasApiLibrary } = getModalApiPromptState(ctrl);
-
-    if (hasApiLibrary && !ctrl.apiNotice) {
-      if (bar) bar.remove();
-      return;
-    }
-
-    if (!needsPrompt && !ctrl.apiBusy && !ctrl.apiNotice) {
-      if (bar) bar.remove();
-      return;
-    }
-
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.className = "ytpf-connect-bar";
-      ctrl.root.appendChild(bar);
-    }
-
-    bar.textContent = "";
-
-    if (ctrl.apiBusy) {
-      const msg = document.createElement("span");
-      msg.className = "ytpf-connect-msg";
-      msg.textContent = "Connecting\u2026";
-      bar.appendChild(msg);
-    } else if (ctrl.apiNotice) {
-      const msg = document.createElement("span");
-      msg.className = "ytpf-connect-msg ytpf-connect-error";
-      msg.textContent = ctrl.apiNotice;
-      bar.appendChild(msg);
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "ytpf-pill-btn";
-      btn.textContent = "Retry";
-      btn.addEventListener("click", () => connectApi(ctrl, { forceReauth: true }));
-      bar.appendChild(btn);
-    } else if (needsPrompt) {
-      const msg = document.createElement("span");
-      msg.className = "ytpf-connect-msg";
-      msg.textContent = "It looks like you have 200+ playlists. YouTube only loads 200 by default.";
-      bar.appendChild(msg);
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "ytpf-chip-btn";
-      btn.textContent = "Load all playlists";
-      btn.title = "Connects to YouTube to fetch your full playlist library";
-      btn.setAttribute("aria-label", "Connects to YouTube to fetch your full playlist library");
-      btn.addEventListener("click", () => connectApi(ctrl));
-      bar.appendChild(btn);
     }
   }
 
@@ -1449,8 +1404,6 @@
     if (!ctrl) return;
 
     ctrl.apiToken = (ctrl.apiToken || 0) + 1;
-    ctrl.apiBusy = false;
-    ctrl.apiSaving = false;
     clearSynthRows(ctrl);
 
     ctrl.rows.forEach((row) => {
@@ -1496,7 +1449,7 @@
           }
         });
         ctrl.rows = freshRows;
-        ctrl.bm25 = createBm25Index(freshRows);
+        ctrl.bm25 = createUnifiedIndex(freshRows, isModal ? apiSessionCache.playlists : null);
         ctrl.parent = freshRows[0]?.parentElement || ctrl.parent;
       }
     }
@@ -1505,13 +1458,16 @@
 
     suppressMutations(160);
 
-    const matches = query
-      ? searchWithBm25(ctrl, query)
-      : fullSet.map((row) => ({ row, score: 0, terms: [] }));
+    const allMatches = query
+      ? searchUnified(ctrl, query)
+      : fullSet.map((row) => ({ source: "dom", row, score: 0, terms: [] }));
 
-    const matchSet = new Set(matches.map((m) => m.row));
+    const domMatches = allMatches.filter((m) => m.source === "dom");
+    const apiMatches = allMatches.filter((m) => m.source === "api");
+
+    const domMatchSet = new Set(domMatches.map((m) => m.row));
     fullSet.forEach((row) => {
-      if (matchSet.has(row)) {
+      if (domMatchSet.has(row)) {
         showRow(row);
       } else {
         hideRow(row);
@@ -1524,7 +1480,7 @@
     if (query && ctrl.sortResults && ctrl.parent?.isConnected) {
       const scrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
 
-      const matchedRows = matches.map((m) => m.row);
+      const matchedRows = domMatches.map((m) => m.row);
       const matchedSet = new Set(matchedRows);
       const orderedRows = [
         ...matchedRows,
@@ -1543,7 +1499,7 @@
 
     if (query) {
       const fallbackTerms = parseQueryTerms(query);
-      matches.forEach((m) => {
+      domMatches.forEach((m) => {
         applyHighlight(m.row, m.terms?.length ? m.terms : fallbackTerms);
       });
     } else {
@@ -1558,13 +1514,13 @@
 
     if (ctrl.surface === "page") {
       const safeTotal = Math.max(0, ctrl.rows.length);
-      const safeVisible = Math.max(0, matches.length);
+      const safeVisible = Math.max(0, domMatches.length);
       ctrl.input.placeholder = `Filter ${safeTotal} playlists`;
       ctrl.meta.textContent = query ? `${safeVisible} of ${safeTotal}` : "";
     }
 
     if (isModal) {
-      renderModalApiUi(ctrl, query);
+      renderSynthRows(ctrl, apiMatches, query);
     }
   }
 
@@ -1591,7 +1547,7 @@
       host,
       surface,
       rows,
-      bm25: createBm25Index(rows),
+      bm25: createUnifiedIndex(rows, surface === "modal" ? apiSessionCache.playlists : null),
       root: ui.root,
       input: ui.input,
       clear: ui.clear,
@@ -1600,9 +1556,6 @@
       sortResults: surface === "modal",
       synthRows: [],
       apiToken: 0,
-      apiBusy: false,
-      apiSaving: false,
-      apiNotice: "",
       scrollContainer: undefined,
     };
 
@@ -1685,12 +1638,12 @@
       }
     });
     existing.rows = rows;
-    existing.bm25 = createBm25Index(rows);
+    existing.bm25 = createUnifiedIndex(rows, existing.surface === "modal" ? apiSessionCache.playlists : null);
     existing.parent = rows[0]?.parentElement || existing.parent;
     existing.sortResults = surface === "modal";
     applyFilter(existing);
     if (surface === "modal") {
-      if (!apiSessionCache.playlists && !existing.apiBusy) {
+      if (!apiSessionCache.playlists) {
         bootstrapModalApi(existing);
       }
     }
