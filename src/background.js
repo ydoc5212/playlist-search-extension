@@ -16,15 +16,31 @@ const CONTENT_SCRIPT_REGISTRATION = {
   persistAcrossSessions: true,
 };
 
+// The service worker hits ensureContentScriptRegistered() from five entry
+// points (module load, onInstalled, onStartup, permissions.onAdded, message
+// handler). getRegisteredContentScripts + registerContentScripts is not
+// atomic, so concurrent calls both see "not registered" and both try to
+// register — the loser throws "Duplicate script ID". Coalesce into one
+// in-flight promise so only one registration actually runs.
+let _registrationInFlight = null;
+
 async function ensureContentScriptRegistered() {
-  if (!(await hasYouTubePermission())) return;
-  const existing = await chrome.scripting.getRegisteredContentScripts({
-    ids: [CONTENT_SCRIPT_ID],
-  });
-  if (existing.length === 0) {
-    await chrome.scripting.registerContentScripts([CONTENT_SCRIPT_REGISTRATION]);
-  }
-  await markSeen(KEYS.permissionGranted);
+  if (_registrationInFlight) return _registrationInFlight;
+  _registrationInFlight = (async () => {
+    try {
+      if (!(await hasYouTubePermission())) return;
+      const existing = await chrome.scripting.getRegisteredContentScripts({
+        ids: [CONTENT_SCRIPT_ID],
+      });
+      if (existing.length === 0) {
+        await chrome.scripting.registerContentScripts([CONTENT_SCRIPT_REGISTRATION]);
+      }
+      await markSeen(KEYS.permissionGranted);
+    } finally {
+      _registrationInFlight = null;
+    }
+  })();
+  return _registrationInFlight;
 }
 
 async function ensureContentScriptUnregistered() {
