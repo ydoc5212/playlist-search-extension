@@ -120,27 +120,14 @@ export async function publish(secrets, target = "default") {
   );
 }
 
-export async function pollStatus(secrets, initialPublish, { pollIntervalMs = 30_000, timeoutMs = 15 * 60_000 } = {}) {
+// CWS returns status=["OK"] when a publish is accepted and enters review.
+// Full review takes hours to days, so polling for "live" is pointless in CI —
+// we just confirm the submission was accepted and exit.
+export async function pollStatus(_secrets, initialPublish) {
   const statusList = initialPublish?.status ?? [];
-  if (statusList.includes("ITEM_PENDING_REVIEW")) {
-    return { state: "in-review", detail: initialPublish?.statusDetail?.join("; "), lastStatus: statusList };
-  }
-  const nonOk = statusList.filter((s) => s !== "OK");
-  if (nonOk.length > 0) {
-    return { state: "rejected", detail: initialPublish?.statusDetail?.join("; "), lastStatus: statusList };
-  }
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const item = await getItem(secrets, "DRAFT");
-    if (item?.uploadState === "SUCCESS") return { state: "live", lastStatus: statusList };
-    if (item?.uploadState === "FAILURE") {
-      return {
-        state: "failed",
-        detail: (item.itemError ?? []).map((e) => `${e.error_code}: ${e.error_detail}`).join("; "),
-        lastStatus: statusList,
-      };
-    }
-    await new Promise((r) => setTimeout(r, pollIntervalMs));
-  }
-  return { state: "timeout", lastStatus: statusList };
+  const detail = initialPublish?.statusDetail?.join("; ");
+  const accepted = new Set(["OK", "ITEM_PENDING_REVIEW"]);
+  const allAccepted = statusList.length > 0 && statusList.every((s) => accepted.has(s));
+  if (allAccepted) return { state: "in-review", detail, lastStatus: statusList };
+  return { state: "rejected", detail, lastStatus: statusList };
 }
