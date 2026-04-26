@@ -146,10 +146,10 @@
     .ytpf-input {
       width: 100%;
       height: 36px;
-      border: 1px solid var(--yt-spec-text-secondary, rgba(0, 0, 0, 0.2));
+      border: 1px solid var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.2));
       border-radius: 18px;
       padding: 0 32px 0 12px;
-      background: var(--yt-spec-general-background-a, rgba(255, 255, 255, 0.08));
+      background: transparent;
       color: var(--yt-spec-text-primary, #0f0f0f);
       font-family: Roboto, Arial, sans-serif;
       font-size: 14px;

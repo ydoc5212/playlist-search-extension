@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.3 - 2026-04-25
+- Fixed save-modal search input rendering with a white background in dark mode by inheriting the panel background instead of forcing a light token.
+
 ## 1.6.1 - 2026-04-17
 - Fixed duplicate-script-ID race in the service worker by coalescing concurrent registration calls into a single in-flight promise.
 
