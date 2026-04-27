@@ -9,7 +9,9 @@
 //
 // See https://developer.chrome.com/docs/webstore/using-api for API shape.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 const ENV_NAME_MAP = {
   extensionId: "CWS_EXTENSION_ID",
@@ -20,10 +22,26 @@ const ENV_NAME_MAP = {
 
 export const SECRET_ENV_NAMES = Object.values(ENV_NAME_MAP);
 
+const SECRETS_FILE = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  "..",
+  ".secrets.local.json",
+);
+
+function loadSecretsFile() {
+  if (!existsSync(SECRETS_FILE)) return {};
+  try {
+    return JSON.parse(readFileSync(SECRETS_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
 export function loadSecrets() {
+  const file = loadSecretsFile();
   const out = {};
   for (const [key, envName] of Object.entries(ENV_NAME_MAP)) {
-    const value = process.env[envName];
+    const value = process.env[envName] || file[envName];
     if (!value) return null;
     out[key] = value;
   }

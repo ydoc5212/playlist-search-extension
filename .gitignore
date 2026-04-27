@@ -5,3 +5,6 @@ dist/
 
 # Maintainer-only (store assets, build scripts, launch docs, QA)
 private/
+
+# CWS publish secrets (env-var fallback used by scripts/cws-api.mjs)
+.secrets.local.json
