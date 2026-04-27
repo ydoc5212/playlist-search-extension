@@ -249,6 +249,7 @@
       z-index: auto;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 8px;
       width: 100%;
       margin: 0 0 16px;

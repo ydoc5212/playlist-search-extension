@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.4 - 2026-04-27
+- Centered the playlist search bar on `/feed/playlists` instead of left-aligning it.
+
 ## 1.6.3 - 2026-04-25
 - Fixed save-modal search input rendering with a white background in dark mode by inheriting the panel background instead of forcing a light token.
 
